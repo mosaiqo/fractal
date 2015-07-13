@@ -309,7 +309,12 @@ class Scope
 
         if ($this->transformerHasIncludes($transformer)) {
             $includedData = $this->fireIncludedTransformers($transformer, $data);
-            $transformedData = $this->manager->getSerializer()->mergeIncludes($transformedData, $includedData);
+
+            // If the serializer does not want the includes to be side-loaded then
+            // the included data must be merged with the transformed data.
+            if (! $this->manager->getSerializer()->sideloadIncludes()) {
+                $transformedData = array_merge($transformedData, $includedData);
+            }
         }
 
         return array($transformedData, $includedData);

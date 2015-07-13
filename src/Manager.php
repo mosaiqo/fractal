@@ -29,14 +29,14 @@ class Manager
      *
      * @var array
      */
-    protected $requestedIncludes = array();
+    protected $requestedIncludes = [];
 
     /**
      * Array containing modifiers as keys and an array value of params.
      *
      * @var array
      */
-    protected $includeParams = array();
+    protected $includeParams = [];
 
     /**
      * The character used to separate modifier parameters.
@@ -96,7 +96,7 @@ class Manager
     public function getIncludeParams($include)
     {
         if (! isset($this->includeParams[$include])) {
-            return;
+            return new ParamBag([]);
         }
 
         $params = $this->includeParams[$include];
@@ -138,13 +138,16 @@ class Manager
     public function parseIncludes($includes)
     {
         // Wipe these before we go again
-        $this->requestedIncludes = $this->includeParams = array();
+        $this->requestedIncludes = $this->includeParams = [];
 
-        if (is_string($includes)) {
-            $includes = explode(',', $includes);
+        if (is_string($includes))
+        {
+            // Explodes the string only by the "," outside the parentheses
+            $includes = preg_split("/(?!\B\([^\(]*),(?![^\)]*\)\B)/", $includes);
         }
 
-        if (! is_array($includes)) {
+        if (! is_array($includes))
+        {
             throw new \InvalidArgumentException(
                 'The parseIncludes() method expects a string or an array. '.gettype($includes).' given'
             );
@@ -152,6 +155,8 @@ class Manager
 
         foreach ($includes as $include) {
             list($includeName, $allModifiersStr) = array_pad(explode(':', $include, 2), 2, null);
+
+
 
             // Trim it down to a cool level of recursion
             $includeName = $this->trimToAcceptableRecursionLevel($includeName);
@@ -173,7 +178,7 @@ class Manager
             // [0] is full matched strings...
             $modifierCount = count($allModifiersArr[0]);
 
-            $modifierArr = array();
+            $modifierArr = [];
 
             for ($modifierIt = 0; $modifierIt < $modifierCount; $modifierIt++) {
                 // [1] is the modifier
@@ -182,13 +187,35 @@ class Manager
                 // and [2] is delimited params
                 $modifierParamStr = $allModifiersArr[2][$modifierIt];
 
-                // Make modifier array key with an array of params as the value
-                $modifierArr[$modifierName] = explode($this->paramDelimiter, $modifierParamStr);
-            }
+                $modifierOptions = explode(',', $modifierParamStr);
 
+
+                foreach($modifierOptions as $modifierParamStr)
+                {
+                    $values = explode($this->paramDelimiter, $modifierParamStr, 2 );
+
+                    // Make modifier array key with an array of params as the value
+                    if(count($values) == 2)
+                    {
+                        list( $key, $value ) = $values;
+                        $modifierArr[ $modifierName ][ $key ] = $value;
+                    }
+                    else
+                    {
+                        if(isset( $modifierArr[ $modifierName ]))
+                        {
+                            $modifierArr[ $modifierName ][ $values[0]] = null ;
+                        }
+                        else
+                        {
+                            $modifierArr[ $modifierName ] = $values[0];
+                        }
+
+                    }
+                }
+            }
             $this->includeParams[$includeName] = $modifierArr;
         }
-
         // This should be optional and public someday, but without it includes would never show up
         $this->autoIncludeParents();
 
@@ -235,7 +262,7 @@ class Manager
      */
     protected function autoIncludeParents()
     {
-        $parsed = array();
+        $parsed = [];
 
         foreach ($this->requestedIncludes as $include) {
             $nested = explode('.', $include);
