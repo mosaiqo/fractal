@@ -143,7 +143,7 @@ class Manager
         if (is_string($includes))
         {
             // Explodes the string only by the "," outside the parentheses
-            $includes = preg_split("/(?!\B\([^\(]*),(?![^\)]*\)\B)/", $includes);
+            $includes = preg_split("/,\s*(?=[^)]*(?:\(|$))/", $includes);
         }
 
         if (! is_array($includes))
