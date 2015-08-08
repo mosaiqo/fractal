@@ -29,7 +29,7 @@ class Scope
     /**
      * @var array
      */
-    protected $availableIncludes = array();
+    protected $availableIncludes = [];
 
     /**
      * @var string
@@ -49,7 +49,7 @@ class Scope
     /**
      * @var array
      */
-    protected $parentScopes = array();
+    protected $parentScopes = [];
 
     /**
      * Create a new scope instance.
@@ -101,7 +101,7 @@ class Scope
      */
     public function getIdentifier($appendIdentifier = null)
     {
-        $identifierParts = array_merge($this->parentScopes, array($this->scopeIdentifer, $appendIdentifier));
+        $identifierParts = array_merge($this->parentScopes, [$this->scopeIdentifer, $appendIdentifier]);
 
         return implode('.', array_filter($identifierParts));
     }
@@ -145,7 +145,7 @@ class Scope
             $scopeArray = array_slice($this->parentScopes, 1);
             array_push($scopeArray, $this->scopeIdentifer, $checkScopeSegment);
         } else {
-            $scopeArray = array($checkScopeSegment);
+            $scopeArray = [$checkScopeSegment];
         }
 
         $scopeString = implode('.', (array) $scopeArray);
@@ -208,7 +208,8 @@ class Scope
             $data = array_merge($data, $includedData);
         }
 
-        if ($this->resource instanceof Collection) {
+        if ($this->resource instanceof Collection)
+        {
             if ($this->resource->hasCursor()) {
                 $pagination = $serializer->cursor($this->resource->getCursor());
             } elseif ($this->resource->hasPaginator()) {
@@ -218,10 +219,28 @@ class Scope
             if (! empty($pagination)) {
                 $this->resource->setMetaValue(key($pagination), current($pagination));
             }
+            $meta = $this->resource->getMeta();
+
+            if(!isset($meta['url']))
+            {
+                $this->resource->setMetaValue( 'url', $this->resource->getTransformer()
+                  ->setMetaUrl());
+            }
+
         }
+
+        // If it' an item we include the the resource to the URL
+        if($this->resource instanceof Item)
+        {
+            $item = $this->resource->getData();
+            $this->resource->setMetaValue( 'url', $this->resource->getTransformer()
+              ->setMetaUrl( $item ) );
+        }
+
 
         // Pull out all of OUR metadata and any custom meta data to merge with the main level data
         $meta = $serializer->meta($this->resource->getMeta());
+
 
         return array_merge($data, $meta);
     }
@@ -248,7 +267,7 @@ class Scope
         $transformer = $this->resource->getTransformer();
         $data = $this->resource->getData();
 
-        $transformedData = $includedData = array();
+        $transformedData = $includedData = [];
 
         if ($this->resource instanceof Item) {
             list($transformedData, $includedData[]) = $this->fireTransformer($transformer, $data);
@@ -263,7 +282,7 @@ class Scope
             );
         }
 
-        return array($transformedData, $includedData);
+        return [$transformedData, $includedData];
     }
 
     /**
@@ -299,7 +318,7 @@ class Scope
      */
     protected function fireTransformer($transformer, $data)
     {
-        $includedData = array();
+        $includedData = [];
 
         if (is_callable($transformer)) {
             $transformedData = call_user_func($transformer, $data);
@@ -317,7 +336,7 @@ class Scope
             }
         }
 
-        return array($transformedData, $includedData);
+        return [$transformedData, $includedData];
     }
 
     /**
@@ -334,7 +353,7 @@ class Scope
     {
         $this->availableIncludes = $transformer->getAvailableIncludes();
 
-        return $transformer->processIncludedResources($this, $data) ?: array();
+        return $transformer->processIncludedResources($this, $data) ?: [];
     }
 
     /**
