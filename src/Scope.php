@@ -14,6 +14,7 @@ namespace League\Fractal;
 use InvalidArgumentException;
 use League\Fractal\Resource\Collection;
 use League\Fractal\Resource\Item;
+use League\Fractal\Resource\Locale;
 use League\Fractal\Resource\ResourceInterface;
 use League\Fractal\Serializer\SerializerAbstract;
 
@@ -237,6 +238,14 @@ class Scope
               ->setMetaUrl( $item ) );
         }
 
+        // If it' an item we include the the resource to the URL
+        if($this->resource instanceof Locale)
+        {
+            $item = $this->resource->getData();
+            $this->resource->setMetaValue( 'url', $this->resource->getTransformer()
+              ->setMetaUrl( $this->resource->getResourceKey() ) );
+        }
+
 
         // Pull out all of OUR metadata and any custom meta data to merge with the main level data
         $meta = $serializer->meta($this->resource->getMeta());
@@ -269,7 +278,10 @@ class Scope
 
         $transformedData = $includedData = [];
 
-        if ($this->resource instanceof Item) {
+        if ($this->resource instanceof Item)
+        {
+            list( $transformedData, $includedData[] ) = $this->fireTransformer( $transformer, $data );
+        } elseif ($this->resource instanceof Locale) {
             list($transformedData, $includedData[]) = $this->fireTransformer($transformer, $data);
         } elseif ($this->resource instanceof Collection) {
             foreach ($data as $value) {

@@ -13,6 +13,7 @@ namespace League\Fractal;
 
 use League\Fractal\Resource\Collection;
 use League\Fractal\Resource\Item;
+use League\Fractal\Resource\Locale;
 use League\Fractal\Resource\ResourceAbstract;
 
 /**
@@ -249,6 +250,20 @@ abstract class TransformerAbstract
     protected function item($data, $transformer, $resourceKey = null)
     {
         return new Item($data, $transformer, $resourceKey);
+    }
+
+    /**
+     * Create a new item resource object.
+     *
+     * @param mixed                        $data
+     * @param TransformerAbstract|callable $transformer
+     * @param string                       $resourceKey
+     *
+     * @return Item
+     */
+    protected function locale($data, $transformer, $resourceKey = null)
+    {
+        return new Locale($data, $transformer, $resourceKey);
     }
 
     /**
