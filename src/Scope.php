@@ -211,15 +211,22 @@ class Scope
 
         if ($this->resource instanceof Collection)
         {
-            if ($this->resource->hasCursor()) {
+            if ($this->resource->hasCursor()){
                 $pagination = $serializer->cursor($this->resource->getCursor());
-            } elseif ($this->resource->hasPaginator()) {
+            }
+            elseif ($this->resource->hasPaginator())
+            {
                 $pagination = $serializer->paginator($this->resource->getPaginator());
+            }
+            else
+            {
+                $this->resource->setMetaValue( 'count', count($rawData) );
             }
 
             if (! empty($pagination)) {
                 $this->resource->setMetaValue(key($pagination), current($pagination));
             }
+
             $meta = $this->resource->getMeta();
 
             if(!isset($meta['url']))
@@ -236,14 +243,6 @@ class Scope
             $item = $this->resource->getData();
             $this->resource->setMetaValue( 'url', $this->resource->getTransformer()
               ->setMetaUrl( $item ) );
-        }
-
-        // If it' an item we include the the resource to the URL
-        if($this->resource instanceof Locale)
-        {
-            $item = $this->resource->getData();
-            $this->resource->setMetaValue( 'url', $this->resource->getTransformer()
-              ->setMetaUrl( $this->resource->getResourceKey() ) );
         }
 
 
